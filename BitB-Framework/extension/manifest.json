@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "BitB-Framework - Browser Attack PoC",
+  "version": "1.0",
+  "description": "Final Year Project - Browser-in-the-Browser Attack Framework",
+  "author": "Your Name",
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+
+  "action": {
+    "default_popup": "dashboard.html",
+    "default_title": "BitB Control Panel"
+  },
+
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+
+  "permissions": [
+    "tabs",
+    "scripting",
+    "webNavigation",
+    "activeTab",
+    "storage"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "bitb-framework@fyp.edu",
+      "strict_min_version": "109.0"
+    }
+  }
+}
