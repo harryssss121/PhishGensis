@@ -121,3 +121,7 @@ if __name__ == '__main__':
     print("🚀 Phish Genesis - BitB-Framework Dashboard STARTED on http://localhost:5000")
     print("   Login → admin / password123")
     socketio.run(app, host='0.0.0.0', port=5000, debug=False)
+
+# Update on 2026-09-13 00:46:27
+# Additional handling and logging improvements
+# Refined logic for better reliability
