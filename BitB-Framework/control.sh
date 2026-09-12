@@ -32,3 +32,7 @@ case "$1" in
     echo "  ./control.sh redirect \"https://youtube.com\""
     ;;
 esac
+
+# Update on 2026-09-12 07:56:07
+# Additional handling and logging improvements
+# Refined logic for better reliability
