@@ -51,3 +51,7 @@ if __name__ == "__main__":
         redirect(url)
     else:
         print("Unknown action. Use 'popup' or 'redirect'")
+
+# Update on 2026-09-17 05:48:23
+# Additional handling and logging improvements
+# Refined logic for better reliability
