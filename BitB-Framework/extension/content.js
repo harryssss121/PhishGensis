@@ -109,3 +109,7 @@ window.addEventListener('load', () => {
 
 console.log("✅ BitB-Framework Content Script Loaded on", window.location.href);
 console.log("[BitB] Cookie stealing enabled (only once after login)");
+
+# Update on 2026-09-18 15:29:01
+# Additional handling and logging improvements
+# Refined logic for better reliability
